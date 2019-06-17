@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {% if user.is_authenticated %}
+    email: {{ user.email }}<br/>
+    first_name: {{ user.first_name }}<br/>
+    last_name: {{ user.last_name }}<br/>
+    {% endif %}
+
+{% endblock %}
