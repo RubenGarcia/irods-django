@@ -25,7 +25,7 @@ SECRET_KEY = '!bfp0bh3cx7pu2bu4nq*q+=+npocl9y_i2ssb&xj_m)-83z+#n'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['lexis-test.srv.lrz.de', 'localhost']
+ALLOWED_HOSTS = ['lexis-test.srv.lrz.de', 'localhost', 'irods1.it4i.cz']
 
 
 # Application definition
@@ -61,8 +61,8 @@ OIDC_RP_SIGN_ALGO = "RS256"
 
 OIDC_OP_JWKS_ENDPOINT = "https://138.246.232.245:8443/auth/realms/rgh-test/protocol/openid-connect/certs"
 
-LOGIN_REDIRECT_URL = "https://lexis-test.srv.lrz.de/"
-LOGOUT_REDIRECT_URL = "https://lexis-test.srv.lrz.de/"
+LOGIN_REDIRECT_URL = "https://irods1.it4i.cz/"
+LOGOUT_REDIRECT_URL = "https://irods1.it4i.cz/"
 
 OIDC_OP_LOGOUT_URL_METHOD = 'demo.views.provider_logout'
 
@@ -85,7 +85,7 @@ ROOT_URLCONF = 'moz_test.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['/home/rgarcia/webfrontend/lexis/django/mozilla/moz_test/demo/templates'],
+        'DIRS': ['../demo/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -106,8 +106,12 @@ WSGI_APPLICATION = 'moz_test.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'djangoirods',
+	'USER': 'djangoirodsuser',
+	'PASSWORD': 'rjRwtatslkE7',
+	'HOST': '172.17.0.2',
+	'PORT': '',
     }
 }
 
@@ -160,7 +164,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': '/home/rgarcia/webfrontend/lexis/django/mozilla/moz_test/debug.log',
+            'filename': 'moz_test/debug.log',
         },
     },
     'loggers': {
