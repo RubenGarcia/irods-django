@@ -53,13 +53,13 @@ OIDC_RP_CLIENT_ID = os.environ['OIDC_RP_CLIENT_ID']
 OIDC_RP_CLIENT_SECRET = os.environ['OIDC_RP_CLIENT_SECRET']
 
 #https://review.cloudera.org/r/13045/diff/1-2/#
-OIDC_OP_AUTHORIZATION_ENDPOINT = "https://138.246.232.245:8443/auth/realms/rgh-test/protocol/openid-connect/auth"
-OIDC_OP_TOKEN_ENDPOINT = "https://138.246.232.245:8443/auth/realms/rgh-test/protocol/openid-connect/token"
-OIDC_OP_USER_ENDPOINT = "https://138.246.232.245:8443/auth/realms/rgh-test/protocol/openid-connect/userinfo"
+OIDC_OP_AUTHORIZATION_ENDPOINT = "https://keycloak.it4i.cz/auth/realms/LEXIS/protocol/openid-connect/auth"
+OIDC_OP_TOKEN_ENDPOINT = "https://keycloak.it4i.cz/auth/realms/LEXIS/protocol/openid-connect/token"
+OIDC_OP_USER_ENDPOINT = "https://keycloak.it4i.cz/auth/realms/LEXIS/protocol/openid-connect/userinfo"
 
 OIDC_RP_SIGN_ALGO = "RS256"
 
-OIDC_OP_JWKS_ENDPOINT = "https://138.246.232.245:8443/auth/realms/rgh-test/protocol/openid-connect/certs"
+OIDC_OP_JWKS_ENDPOINT = "https://keycloak.it4i.cz/auth/realms/LEXIS/protocol/openid-connect/certs"
 
 LOGIN_REDIRECT_URL = "https://irods1.it4i.cz/"
 LOGOUT_REDIRECT_URL = "https://irods1.it4i.cz/"
@@ -67,6 +67,10 @@ LOGOUT_REDIRECT_URL = "https://irods1.it4i.cz/"
 OIDC_OP_LOGOUT_URL_METHOD = 'demo.views.provider_logout'
 
 OIDC_VERIFY_SSL = False
+
+#rgh, while the use of this is discouraged, OIDC_STORE_ACCESS_TOKEN may be needed to have it available to send to irods
+OIDC_STORE_ACCESS_TOKEN=True
+OIDC_STORE_ID_TOKEN=True
 
 #https://github.com/heroku/heroku-django-template/issues/55
 MIDDLEWARE = [
@@ -168,7 +172,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'handlers': {
         'console': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
 	},
         'file': {
@@ -180,7 +184,7 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['file', 'console'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True,
         },
     },
