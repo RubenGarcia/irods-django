@@ -86,6 +86,9 @@ MIDDLEWARE = [
 
 #OIDC_CREATE_USER = False
 
+#rgh, did not make a difference in token size
+#OIDC_RP_SCOPES = "openid"
+
 ROOT_URLCONF = 'moz_test.urls'
 
 TEMPLATES = [
