@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '!bfp0bh3cx7pu2bu4nq*q+=+npocl9y_i2ssb&xj_m)-83z+#n'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['lexis-test.srv.lrz.de', 'localhost', 'irods1.it4i.cz']
 

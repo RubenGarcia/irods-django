@@ -1,15 +1,26 @@
 import traceback
 import requests
 import json
+import pdb
+import threading
+import time
+import re
+import logging
+import urllib.parse
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 
 import urllib.parse
 from moz_test.settings import OIDC_OP_USER_ENDPOINT
 
 from irods.session import iRODSSession
 from irods.manager.collection_manager import CollectionManager
+
+myresults = [] 
+calls = 0
+inProcess=False
 
 # Create your views here.
 
@@ -25,8 +36,46 @@ def ls_coll(coll):
             info = 'C- ' + coll_obj.name + '<br/>'
         return info
 
+def mythread(coll_manager):
+    global myresults
+    global inProcess
+    logger = logging.getLogger('django')
+    logger.info("from thread, before blocking")
+    inProcess=True
+    print ("from thread, before blocking")
+    myresults.insert (0,  ls_coll(coll_manager.get('/tempZone/home/rods')))
+    inProcess=False
+    logger.info("from thread, after blocking")
+    print("from thread, after blocking")
+    logger.info("from thread, " + myresults[0])
+    print ("from thread, len(myresults):" + str(len(myresults)))
+    print ("my thread ended")
+#    i=0
+#    while True:
+#      i=i+1
+#      print ("from thread, "+str(i))  
+
+#code is a random number which corresponds to the previous request
 @login_required
-def irods(request):
+def irods(request, code=0):
+    global myresults
+    global calls
+    global inProcess
+
+    calls = calls + 1
+    print ("calls "+str(calls))
+    print ("myresults has elements:")
+    print (len(myresults))
+    if (inProcess):
+      while inProcess:
+         print ("in irods, inProcess is true, waiting")
+         time.sleep (10)
+      print ("process ended")
+    if len(myresults)==1:
+       info=myresults[0]
+       myresults=[]
+       return render(request, 'demo/irods.html', {'info':info})       
+
     at=request.session.get('oidc_access_token', None)
 #rgh: these tokens (at, id) are too large and provide a USER_PACKSTRUCT_INPUT_ERR. Probably this is not the token we want.
 #rgh: most of the information is good, see https://code.it4i.cz/lexis/wp8/dataset-management-interface/issues/6#note_13967
@@ -39,26 +88,10 @@ def irods(request):
     id=request.session.get('oidc_id_token', None)
 #    print ("at is")
 #    print (at)
-    print ("len of at: "+str(len(at)))
-    print ("len of id: "+str(len(id)))
-    print (id)
+#    print ("len of at: "+str(len(at)))
+#    print ("len of id: "+str(len(id)))
+#    print (id)
     info = 'information +'
-
-#try to get a smaller token using
-#https://github.com/heliumdatacommons/auth_microservice/wiki/API-and-Use
-
-#sub of id is the uid
-
-#to get the authorization, use
-#https://github.com/irods-contrib/irods_auth_plugin_openid
-
-#auth: 1a91e10eb3cda3d404a383f49c04d3cc13acbee5cb680c8769414e4343b9482e
-#with service: webportal
-
-#auth: 37789fde4bb12a17818d7a4161448a5176285ac793c216b5724391040bd2dd2c
-#with service: irods-auth-plugin
-
-#since we are in a container, use https://172.17.0.3:8080
 
     r = requests.get('https://172.17.0.3:8080/token', 
      headers={
@@ -76,9 +109,12 @@ def irods(request):
 
     if (r.status_code==200):
        obj=json.loads(r.text)
-       id=obj["access_token"]
+       #id=obj["access_token"]
        print ("extracted access token from response, passing to irods")
-#
+       print ("new id:")
+       #print (id)
+
+    #pdb.set_trace()
     if (id == None):
        info = 'no access token'
     else:
@@ -88,22 +124,29 @@ def irods(request):
         access_token=id,
         ) as session:
         coll_manager = CollectionManager(session)
-        try:
-          coll = coll_manager.get('/tempZone/home/rods')
-          info = info + ls_coll(coll)
-        except Exception as e: 
-           traceback.print_exc()
-           print (e)
-           info = info + 'error on first irods session '+str(e)
-           with iRODSSession(host='172.17.0.4', port=1247, authentication_scheme='openid',
-           openid_provider='keycloak_openid', user="rods", zone='tempZone') as s2:
-              coll_manager = CollectionManager(s2)
-              coll = coll_manager.get('/tempZone/home/rods')
-              info = info + ls_coll(coll)
+        x = threading.Thread(target=mythread, args=(coll_manager,))
+        x.start()
+        while (session.pool.currentAuth==None):
+#            print ("Waiting")
+            time.sleep(0.1)
+        print (session.pool.currentAuth)
+        info = session.pool.currentAuth
+#        coll = coll_manager.get('/tempZone/home/rods')
+#        info = info + ls_coll(coll)
 
+        info = re.sub('\&prompt\=login\%20consent$', '', info)
+        print (info)
+        thisview=request.build_absolute_uri(reverse('irods'))
+        print ("this view: "+thisview)
+        thisview=urllib.parse.quote(thisview)
+        print ("urlencoded: "+thisview)
+#triple somersault
+#keycloak -> https://irods1.it4i.cz:8080/authcallback -> https://irods1.it4i.cz/demo/irods
+#        info = re.sub('https://irods1.it4i.cz:8080/authcallback', "https://irods1.it4i.cz:8080/authcallback%3F%0Aredirect%3D" +thisview+"&", info)
+        print (info)
 
-
-    return render(request, 'demo/irods.html', {'info':info})
+    #return render(request, 'demo/irods.html', {'info':info})
+    return redirect (info)
 
 def provider_logout(request):
     # See your provider's documentation for details on if and how this is
