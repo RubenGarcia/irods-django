@@ -1,0 +1,6 @@
+{
+    "irods_host": "172.17.0.4",
+    "irods_zone_name": "tempZone",
+    "irods_user_name": "rods",
+    "irods_port": 1247
+}
