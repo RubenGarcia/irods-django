@@ -36,7 +36,12 @@ def ls_coll(coll):
             info = 'C- ' + coll_obj.name + '<br/>'
         return info
 
-def mythread(coll_manager, token):
+class irodsthread:
+  nonce=None
+  def __init__(self, coll_manager, token):
+     threading.Thread(target=self.mythread, args=(coll_manager,token,)).start()
+     
+  def mythread(self, coll_manager, token):
     global myresults
     global inProcess
     logger = logging.getLogger('django')
@@ -44,7 +49,10 @@ def mythread(coll_manager, token):
     inProcess=True
     print ("from thread, before blocking")
     try:
-       myresults.insert (0,  (token,ls_coll(coll_manager.get('/tempZone/home/rods'))))
+       data=ls_coll(coll_manager.get('/tempZone/home/rods'))
+       while (self.nonce == None):
+            time.sleep(0.1)
+       myresults.insert (0,  (token,self.nonce,data))
     except:
        print ("in thread, auth failed, aborting")
     inProcess=False
@@ -60,25 +68,32 @@ def irods(request):
          time.sleep (0.1)
 
     id=request.session.get('oidc_id_token', None)
+    nonce=request.GET.get('nonce')
    
-    for i in range (0, len(myresults)):
-        if myresults[i][0]==id:
-           info=myresults[i][1]
+    if nonce != None:
+      for i in range (0, len(myresults)):
+        if myresults[i][1]==nonce:
+           info="<h2>Token: </h2>"+myresults[i][0] 			\
+                + "<br/><h2>nonce: </h2>" + myresults[i][1] 		\
+                + "<br/><h2>irods results:</h2><br/>" + myresults[i][2]
            del myresults[i]
            return render(request, 'demo/irods.html', {'info':info})
+
 
     with iRODSSession(host='172.17.0.4', port=1247, authentication_scheme='openid', 
         openid_provider='keycloak_openid', user="rods", 
         zone='tempZone', 
         ) as session:
         coll_manager = CollectionManager(session)
-        x = threading.Thread(target=mythread, args=(coll_manager,id,))
-        x.start()
+        x = irodsthread (coll_manager, id)
         while (session.pool.currentAuth==None):
             time.sleep(0.1)
 
         info = session.pool.currentAuth
-
+        print ("info is <"+info+">")
+        nonce=re.search ("nonce=(.*?)&", info).group(1)
+        print ("nonce is <"+str(nonce)+">")
+        x.nonce=nonce
         info = re.sub('\&prompt\=login\%20consent$', '', info)
 
     return redirect (info)

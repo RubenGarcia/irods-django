@@ -7,7 +7,7 @@
     last_name: {{ user.last_name }}<br/>
 <br/>
 <br/>
-Info: {{info}}<br/>
+<h1>Info:</h1> {% autoescape off %}{{info}}{% endautoescape %}<br/>
     {% endif %}
 
 {% endblock %}
