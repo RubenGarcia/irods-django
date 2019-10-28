@@ -70,8 +70,9 @@ OIDC_VERIFY_SSL = False
 
 #rgh, while the use of this is discouraged, OIDC_STORE_ACCESS_TOKEN may be needed to have it available to send to irods
 #rgh, since we cannot send to irods due to large size, disable this
-OIDC_STORE_ACCESS_TOKEN=False
-OIDC_STORE_ID_TOKEN=False
+#rgh, we need this if we are backend
+OIDC_STORE_ACCESS_TOKEN=True
+OIDC_STORE_ID_TOKEN=True
 
 #https://github.com/heroku/heroku-django-template/issues/55
 MIDDLEWARE = [

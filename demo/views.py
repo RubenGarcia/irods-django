@@ -8,6 +8,7 @@ import re
 import logging
 import urllib.parse
 import json
+import requests
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
@@ -159,7 +160,15 @@ def listDatasets(request):
         x.nonce=nonce
         info = re.sub('\&prompt\=login\%20consent$', '', info)
 
-    return redirect (info)
+#do redirect ourselves
+        response = requests.get (info, verify=False, 
+            headers={#'Accept': 'application/json',
+#                     'Authorization' : 'Bearer ' + request.session.get('oidc_access_token', None)})
+                     'Authorization' : 'Bearer ' + request.session.get('oidc_id_token', None)})
+        pdb.set_trace()
+        print (response)
+    return render(request, 'demo/X.html', {'body':response.content})
+#    return redirect (info)
 
 
 def provider_logout(request):
