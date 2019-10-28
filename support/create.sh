@@ -3,7 +3,7 @@ CreateBasePaths=False
 CreateProjects=False
 CreateUser=False
 CreateUserDatasets=False
-CreatePublicDatasets=True
+CreatePublicDatasets=False
 
 iinit
 #create user, add aua
