@@ -142,7 +142,25 @@ def irods(request):
 
 @login_required
 def listDatasets(request):
-   pass
+    with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid',
+        openid_provider='keycloak_openid', user=IRODS['user'],
+        zone=IRODS['zone'],
+        ) as session:
+        coll_manager = CollectionManager(session)
+        x = irodsthread (coll_manager)
+        while (session.pool.currentAuth==None):
+            time.sleep(0.1)
+
+        info = session.pool.currentAuth
+        print ("info is <"+info+">")
+        nonce=re.search ("nonce=(.*?)&", info).group(1)
+        print ("nonce is <"+str(nonce)+">")
+        myresults.insert (0,  [nonce,None,None])
+        x.nonce=nonce
+        info = re.sub('\&prompt\=login\%20consent$', '', info)
+
+    return redirect (info)
+
 
 def provider_logout(request):
     # See your provider's documentation for details on if and how this is

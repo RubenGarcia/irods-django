@@ -6,6 +6,7 @@
     first_name: {{ user.first_name }}<br/>
     last_name: {{ user.last_name }}<br/>
 <br/>
+<a href={% url 'listDatasets' %}>/dataset endpoint</a><br/>
 <a href={% url 'irods' %}>Check irods files</a><br/>
     {% endif %}
 {% endblock %}
