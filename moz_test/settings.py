@@ -20,12 +20,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '!bfp0bh3cx7pu2bu4nq*q+=+npocl9y_i2ssb&xj_m)-83z+#n'
+SECRET_KEY = '<secret_key>'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['lexis-test.srv.lrz.de', 'localhost', 'irods1.it4i.cz']
+ALLOWED_HOSTS = ['<allowed_host>']
 
 
 # Application definition
@@ -53,16 +53,16 @@ OIDC_RP_CLIENT_ID = os.environ['OIDC_RP_CLIENT_ID']
 OIDC_RP_CLIENT_SECRET = os.environ['OIDC_RP_CLIENT_SECRET']
 
 #https://review.cloudera.org/r/13045/diff/1-2/#
-OIDC_OP_AUTHORIZATION_ENDPOINT = "https://keycloak.it4i.cz/auth/realms/LEXIS/protocol/openid-connect/auth"
-OIDC_OP_TOKEN_ENDPOINT = "https://keycloak.it4i.cz/auth/realms/LEXIS/protocol/openid-connect/token"
-OIDC_OP_USER_ENDPOINT = "https://keycloak.it4i.cz/auth/realms/LEXIS/protocol/openid-connect/userinfo"
+OIDC_OP_AUTHORIZATION_ENDPOINT = "<keycloak>/protocol/openid-connect/auth"
+OIDC_OP_TOKEN_ENDPOINT = "<keycloak>/protocol/openid-connect/token"
+OIDC_OP_USER_ENDPOINT = "<keycloak>/protocol/openid-connect/userinfo"
 
 OIDC_RP_SIGN_ALGO = "RS256"
 
-OIDC_OP_JWKS_ENDPOINT = "https://keycloak.it4i.cz/auth/realms/LEXIS/protocol/openid-connect/certs"
+OIDC_OP_JWKS_ENDPOINT = "<keycloak>/protocol/openid-connect/certs"
 
-LOGIN_REDIRECT_URL = "https://irods1.it4i.cz/"
-LOGOUT_REDIRECT_URL = "https://irods1.it4i.cz/"
+LOGIN_REDIRECT_URL = "<url>"
+LOGOUT_REDIRECT_URL = "<url>"
 
 OIDC_OP_LOGOUT_URL_METHOD = 'demo.views.provider_logout'
 
@@ -118,10 +118,10 @@ WSGI_APPLICATION = 'moz_test.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'djangoirods',
-	'USER': 'djangoirodsuser',
-	'PASSWORD': 'rjRwtatslkE7',
-	'HOST': '172.17.0.2',
+        'NAME': '<db_name>',
+	'USER': '<db_user>',
+	'PASSWORD': '<db_pass>',
+	'HOST': '<db_host>',
 	'PORT': '',
     }
 }
