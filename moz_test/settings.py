@@ -122,7 +122,7 @@ DATABASES = {
 	'USER': '<db_user>',
 	'PASSWORD': '<db_pass>',
 	'HOST': '<db_host>',
-	'PORT': '',
+	'PORT': '<db_port>',
     }
 }
 
