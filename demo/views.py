@@ -13,6 +13,7 @@ import requests
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
+from django.conf import settings
 
 from demo.settings import IRODS
 
@@ -177,5 +178,5 @@ def provider_logout(request):
     #https://stackoverflow.com/questions/37108782/keycloak-logout-request
     back_url=request.build_absolute_uri('/')
     encoded=urllib.parse.quote(back_url)
-    redirect_url = 'https://keycloak.it4i.cz/auth/realms/LEXIS/protocol/openid-connect/logout?redirect_uri='+encoded
+    redirect_url = settings.KEYCLOAK_LOGOUT_ENDPOINT + '?redirect_uri='+encoded
     return redirect_url

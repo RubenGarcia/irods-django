@@ -57,6 +57,8 @@ OIDC_OP_AUTHORIZATION_ENDPOINT = "<keycloak>/protocol/openid-connect/auth"
 OIDC_OP_TOKEN_ENDPOINT = "<keycloak>/protocol/openid-connect/token"
 OIDC_OP_USER_ENDPOINT = "<keycloak>/protocol/openid-connect/userinfo"
 
+KEYCLOAK_LOGOUT_ENDPOINT = "<keycloak>/protocol/openid-connect/logout"
+
 OIDC_RP_SIGN_ALGO = "RS256"
 
 OIDC_OP_JWKS_ENDPOINT = "<keycloak>/protocol/openid-connect/certs"
