@@ -22,11 +22,19 @@ import urllib.parse
 from irods.session import iRODSSession
 from irods.manager.collection_manager import CollectionManager
 
-myresults = [] 
-calls = 0
-inProcess=False
-
 # Create your views here.
+
+@login_required
+def getToken(request):
+    return render(request, 'demo/getToken.html', {'token':request.session.get('oidc_access_token', None)})
+
+@login_required
+def validateToken(request):
+    req = requests.get ('https://irods-auth.lexis.lrz.de/validate_token', 
+             params = {'provider': 'keycloak_openid', 'access_token': request.session.get('oidc_access_token', None)})
+
+    return render(request, 'demo/validateToken.html', {'response': req.status_code, 'json': req.json()})
+
 
 def index(request):
     return render(request, 'demo/index.html')
@@ -97,56 +105,25 @@ class irodsthread:
                myresults[i][2]={}
     logger.info("from thread, after blocking")
 
+
+#https://github.com/RubenGarcia/python-irodsclient/blob/openid/examples/pyiget.py
 @login_required
 def irods(request):
-    global myresults
-    global calls
-    global inProcess
-
-    while inProcess:
-         time.sleep (0.1)
-
-    nonce=request.GET.get('nonce')
-   
-    if nonce != None:
-      for i in range (0, len(myresults)):
-        if myresults[i][0]==nonce:
-#confirm that thread finished
-           while(myresults[i][1]==None):
-              time.sleep(0.1)
-           info="<h2>" + "irods results:</h2><br/>" + myresults[i][1]
-           data=myresults[i][2]
-           del myresults[i]
-           print ("array of json is")
-           print (data)
-           return render(request, 'demo/irods.html', {'info':info, 'data':json.dumps(data, sort_keys=True, indent=4)})
-      #old request
-      return redirect (request.build_absolute_uri('/'))
 
     with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid', 
         openid_provider='keycloak_openid', user=IRODS['user'], 
-        zone=IRODS['zone'], 
+        zone=IRODS['zone'], access_token=request.session.get('oidc_access_token', None)
         ) as session:
+        pdb.set_trace()
         coll_manager = CollectionManager(session)
-        x = irodsthread (coll_manager)
-        while (session.pool.currentAuth==None):
-            time.sleep(0.1)
-
-        info = session.pool.currentAuth
-        print ("info is <"+info+">")
-        nonce=re.search ("nonce=(.*?)&", info).group(1)
-        print ("nonce is <"+str(nonce)+">")
-        myresults.insert (0,  [nonce,None,None])
-        x.nonce=nonce
-        info = re.sub('\&prompt\=login\%20consent$', '', info)
-
-    return redirect (info)
+        (data,d)=ls_coll(coll_manager.get('/'+IRODS['zone']+'/public'))
+        return render (request, {info:data, json:d})
 
 @login_required
 def listDatasets(request):
     with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid',
         openid_provider='keycloak_openid', user=IRODS['user'],
-        zone=IRODS['zone'],
+        zone=IRODS['zone'], access_token=at
         ) as session:
         coll_manager = CollectionManager(session)
         x = irodsthread (coll_manager)
