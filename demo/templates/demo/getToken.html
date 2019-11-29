@@ -2,14 +2,9 @@
 
 {% block content %}
     {% if user.is_authenticated %}
-    email: {{ user.email }}<br/>
-    first_name: {{ user.first_name }}<br/>
-    last_name: {{ user.last_name }}<br/>
+    {{token}}
 <br/>
 <a href={% url 'listDatasets' %}>/dataset endpoint</a><br/>
 <a href={% url 'irods' %}>Check irods files</a><br/>
-<a href={% url 'getToken'  %}>GetToken</a><br/>
-<a href={% url 'validateToken'  %}>ValidateToken</a><br/>
-
     {% endif %}
 {% endblock %}

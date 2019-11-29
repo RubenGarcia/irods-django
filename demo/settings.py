@@ -1,8 +1,8 @@
 #irods configuration
 IRODS = {
   'zone':'tempZone',
-  'user':'rods',
-  'host':'172.17.0.4', 
+  'user':'ruben',
+  'host': 'irods.lexis.lrz.de',
   'port':1247,
 }
 
