@@ -65,6 +65,7 @@ OIDC_OP_JWKS_ENDPOINT = "<keycloak>/protocol/openid-connect/certs"
 
 LOGIN_REDIRECT_URL = "<url>"
 LOGOUT_REDIRECT_URL = "<url>"
+LOGIN_URL = "<url>"
 
 OIDC_OP_LOGOUT_URL_METHOD = 'demo.views.provider_logout'
 

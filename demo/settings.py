@@ -2,7 +2,7 @@
 IRODS = {
   'zone':'tempZone',
   'user':'rods',
-  'host':'172.17.0.4', 
-  'port':1247,
+  'host':'<irods_host>', 
+  'port':<irods_port>,
 }
 
