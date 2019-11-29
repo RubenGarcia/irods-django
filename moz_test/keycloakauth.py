@@ -19,5 +19,5 @@ class MyOIDCAB(OIDCAuthenticationBackend):
 
     def create_user(self, claims):
         user = super(MyOIDCAB, self).create_user(claims)
-        return self.update_user (self, user, claims)
+        return self.update_user (user, claims)
 
