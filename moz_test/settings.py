@@ -20,12 +20,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '<secret_key>'
+SECRET_KEY ='GV.MZd:YU,sR@@d=8olZ@__m5bK=,=NgSoD/Z$bY/5#84;I[Md'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['<allowed_host>']
+ALLOWED_HOSTS = ['irods-api.lexis.lrz.de']
 
 
 # Application definition
@@ -38,7 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'demo.apps.DemoConfig',
 ]
+
+AUTH_USER_MODEL = 'demo.CustomUser'
 
 AUTHENTICATION_BACKENDS = (
 #https://buildmedia.readthedocs.org/media/pdf/mozilla-django-oidc/latest/mozilla-django-oidc.pdf
@@ -49,23 +52,23 @@ AUTHENTICATION_BACKENDS = (
     # ...
 )
 
-OIDC_RP_CLIENT_ID = os.environ['OIDC_RP_CLIENT_ID']
-OIDC_RP_CLIENT_SECRET = os.environ['OIDC_RP_CLIENT_SECRET']
+OIDC_RP_CLIENT_ID = 'broker'
+OIDC_RP_CLIENT_SECRET = 'ae93668d-48e0-40a5-a9a5-4df84e8629c5'
 
 #https://review.cloudera.org/r/13045/diff/1-2/#
-OIDC_OP_AUTHORIZATION_ENDPOINT = "<keycloak>/protocol/openid-connect/auth"
-OIDC_OP_TOKEN_ENDPOINT = "<keycloak>/protocol/openid-connect/token"
-OIDC_OP_USER_ENDPOINT = "<keycloak>/protocol/openid-connect/userinfo"
+OIDC_OP_AUTHORIZATION_ENDPOINT = "https://keycloak.lrz.lexis-project.eu/auth/realms/portal-testing/protocol/openid-connect/auth"
+OIDC_OP_TOKEN_ENDPOINT = "https://keycloak.lrz.lexis-project.eu/auth/realms/portal-testing/protocol/openid-connect/token"
+OIDC_OP_USER_ENDPOINT = "https://keycloak.lrz.lexis-project.eu/auth/realms/portal-testing/protocol/openid-connect/userinfo"
 
-KEYCLOAK_LOGOUT_ENDPOINT = "<keycloak>/protocol/openid-connect/logout"
+KEYCLOAK_LOGOUT_ENDPOINT = "https://keycloak.lrz.lexis-project.eu/auth/realms/portal-testing/protocol/openid-connect/logout"
 
 OIDC_RP_SIGN_ALGO = "RS256"
 
-OIDC_OP_JWKS_ENDPOINT = "<keycloak>/protocol/openid-connect/certs"
+OIDC_OP_JWKS_ENDPOINT = "https://keycloak.lrz.lexis-project.eu/auth/realms/portal-testing/protocol/openid-connect/certs"
 
-LOGIN_REDIRECT_URL = "<url>"
-LOGOUT_REDIRECT_URL = "<url>"
-LOGIN_URL = "<url>"
+LOGIN_REDIRECT_URL = "https://irods-api.lexis.lrz.de/"
+LOGOUT_REDIRECT_URL = "https://irods-api.lexis.lrz.de/"
+LOGIN_URL = "https://irods-api.lexis.lrz.de/"
 
 OIDC_OP_LOGOUT_URL_METHOD = 'demo.views.provider_logout'
 
@@ -121,11 +124,11 @@ WSGI_APPLICATION = 'moz_test.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': '<db_name>',
-        'USER': '<db_user>',
-        'PASSWORD': '<db_pass>',
-        'HOST': '<db_host>',
-        'PORT': '<db_port>',
+        'NAME': 'irods_api',
+        'USER': 'api',
+        'PASSWORD': 'test_api_db_pw',
+        'HOST': 'irods-postgresql.lexis.lrz.de',
+        'PORT': '5432',
     }
 }
 
@@ -192,7 +195,7 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['file', 'console'],
-            'level': 'INFO',
+            'level': 'DEBUG',
             'propagate': True,
         },
     },

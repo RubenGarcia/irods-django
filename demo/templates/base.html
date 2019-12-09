@@ -3,6 +3,9 @@
     {% if user.is_authenticated %}
     <p>
     <form action="{% url 'oidc_logout' %}" method="post" ><input type="submit" value="Log out"/>{% csrf_token %}</form>
+    <p>
+    <a href="/">Home</a><br/>
+    </p>
       <p>Current user: {{ user.email }}</p>
     {% else %}
       <p>User is not logged in </p>
@@ -10,8 +13,7 @@
       <a href="{% url 'oidc_authentication_init' %}">Login</a>
       </p>
     {% endif %}
-    <p>
+
     {% block content %}{% endblock content %}
-    </p>
   </body>
 </html>
