@@ -91,7 +91,7 @@ def ls_coll (coll_manager):
 @login_required
 def irods(request):
     with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid', 
-        openid_provider='keycloak_openid', user=request.user.irods_username, 
+        openid_provider='keycloak_openid', user=request.user.irods_name, 
         zone=IRODS['zone'], access_token=request.session.get('oidc_access_token', None),
         block_on_authURL=False
         ) as session:
@@ -110,7 +110,7 @@ def irods(request):
 @login_required
 def listDatasets(request):
     with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid',
-        openid_provider='keycloak_openid', user=request.user.irods_username,
+        openid_provider='keycloak_openid', user=request.user.irods_name,
         zone=IRODS['zone'], access_token=request.session.get('oidc_access_token', None),
         block_on_authURL=False
         ) as session:
@@ -128,7 +128,7 @@ def listDatasets(request):
 
 def Dataset(request, doi):
     with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid',
-         openid_provider='keycloak_openid', user=request.user.irods_username,
+         openid_provider='keycloak_openid', user=request.user.irods_name,
         zone=IRODS['zone'], access_token=request.session.get('oidc_access_token', None),
         block_on_authURL=False
         ) as session:
@@ -164,7 +164,7 @@ def gatherData(session, results):
            
 def Year(request, year):
     with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid',
-         openid_provider='keycloak_openid', user=request.user.irods_username,
+         openid_provider='keycloak_openid', user=request.user.irods_name,
         zone=IRODS['zone'], access_token=request.session.get('oidc_access_token', None),
         block_on_authURL=False
         ) as session:
@@ -185,7 +185,7 @@ def Year(request, year):
 
 def Meta(request, meta, value):
     with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid',
-         openid_provider='keycloak_openid', user=request.user.irods_username,
+         openid_provider='keycloak_openid', user=request.user.irods_name,
         zone=IRODS['zone'], access_token=request.session.get('oidc_access_token', None),
         block_on_authURL=False
         ) as session:
