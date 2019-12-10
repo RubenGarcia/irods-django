@@ -150,7 +150,57 @@ def Dataset(request, doi):
         datasetMeta(d, coll.metadata)
 
         return HttpResponse (json.dumps(d, sort_keys=True, indent=4), content_type='application/json')
+
+def gatherData(session, results):
+        i=[]
+        for r in results:
+           d={}
+           coll=session.collections.get(r[Collection.name])
+           d['name']=coll.name
+           datasetMeta(d, coll.metadata)
+           i.append(d)
+        return i
+
            
+def Year(request, year):
+    with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid',
+         openid_provider='keycloak_openid', user=request.user.irods_username,
+        zone=IRODS['zone'], access_token=request.session.get('oidc_access_token', None),
+        block_on_authURL=False
+        ) as session:
+        try:
+           results = session.query(Collection, CollectionMeta).filter(
+                        Criterion('=', CollectionMeta.name, 'publicationYear')).filter(
+                        Criterion('=', CollectionMeta.value, year)
+                        ).execute()
+        except ExceptionOpenIDAuthUrl:
+          return HttpResponse ('{"status": "401", "errorString": "Token not accepted by irods, Auth URL sent by irods"}', content_type='application/json', status=401)
+        except:
+          return HttpResponse ('{"status": "503", "errorString": "Error connecting to irods backend"}', content_type='application/json', status=503)
+        if len(results)==0:
+          return HttpResponse ('{}',  content_type='application/json')
+        
+        i=gatherData(session, results)
+        return HttpResponse (json.dumps(i, sort_keys=True, indent=4), content_type='application/json') 
+
+def Meta(request, meta, value):
+    with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid',
+         openid_provider='keycloak_openid', user=request.user.irods_username,
+        zone=IRODS['zone'], access_token=request.session.get('oidc_access_token', None),
+        block_on_authURL=False
+        ) as session:
+        try:
+           results = session.query(Collection, CollectionMeta).filter(
+                        Criterion('=', CollectionMeta.name, meta)).filter(
+                        Criterion('=', CollectionMeta.value, value)
+                        ).execute()
+        except ExceptionOpenIDAuthUrl:
+          return HttpResponse ('{"status": "401", "errorString": "Token not accepted by irods, Auth URL sent by irods"}', content_type='application/json', status=401)
+        except:
+          return HttpResponse ('{"status": "503", "errorString": "Error connecting to irods backend"}', content_type='application/json', status=503)
+        i=gatherData(session, results)
+        return HttpResponse (json.dumps(i, sort_keys=True, indent=4), content_type='application/json')
+ 
 
 def provider_logout(request):
     # See your provider's documentation for details on if and how this is
