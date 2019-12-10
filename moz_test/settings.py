@@ -68,6 +68,7 @@ OIDC_OP_JWKS_ENDPOINT = "https://keycloak.lrz.lexis-project.eu/auth/realms/porta
 
 LOGIN_REDIRECT_URL = "https://irods-api.lexis.lrz.de/"
 LOGOUT_REDIRECT_URL = "https://irods-api.lexis.lrz.de/"
+
 LOGIN_URL = "https://irods-api.lexis.lrz.de/"
 
 OIDC_OP_LOGOUT_URL_METHOD = 'demo.views.provider_logout'

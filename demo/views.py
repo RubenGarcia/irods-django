@@ -23,6 +23,8 @@ import urllib.parse
 from irods.session import iRODSSession
 from irods.manager.collection_manager import CollectionManager
 from irods.exception import CollectionDoesNotExist
+from irods.models import DataObject, DataObjectMeta, Collection, CollectionMeta
+from irods.column import Criterion
 
 from irods.connection import ExceptionOpenIDAuthUrl
 
@@ -45,6 +47,18 @@ def validateToken(request):
 def index(request):
     return render(request, 'demo/index.html')
 
+def datasetMeta(d, metadata):
+    for x in ['identifier', 'title', 'publicationYear', 'resourceType', 'relatedIdentifier']:
+        try:
+           d[x]=metadata.get_one(x).value
+        except:
+           print('Irods metadata for ' + x + ' does not conform to standard, ignoring')
+    for x in ['creator', 'publisher', 'owner', 'contributor' ]:
+           d[x]=[]
+           for y in metadata.get_all(x):
+               d[x].append (y.value)
+
+
 #https://github.com/theferrit32/python-irodsclient/blob/openid/examples/pyils.py
 def ls_coll_public(coll):
         i=[]
@@ -61,15 +75,7 @@ def ls_coll_public(coll):
                     d['project']=p['name']
                     d['group']=g['name']
                     #now metadata
-                    for x in ['identifier', 'title', 'publicationYear', 'resourceType', 'relatedIdentifier']:
-                        try:
-                          d[x]=dataset.metadata.get_one(x).value
-                        except:
-                          print('Irods metadata for ' + x + ' does not conform to standard, ignoring')
-                    for x in ['creator', 'publisher', 'owner', 'contributor' ]:
-                             d[x]=[]
-                             for y in dataset.metadata.get_all(x):
-                                 d[x].append (y.value)
+                    datasetMeta(d, dataset.metadata)
                     # now origin
                     d['access_permission']='public'
                     i.append(d)
@@ -78,6 +84,7 @@ def ls_coll_public(coll):
 def ls_coll (coll_manager):
    coll=coll_manager.get('/'+IRODS['zone']+'/public')
    public=ls_coll_public (coll)
+#add search through project and user
    return public
 
 #https://github.com/RubenGarcia/python-irodsclient/blob/openid/examples/pyiget.py
@@ -111,13 +118,39 @@ def listDatasets(request):
         try:
           d=ls_coll(coll_manager)
         except CollectionDoesNotExist:
-          return HttpResponse ('{"status": "503", "message": "Irods files not in expected format"}', content_type='application/json', status=503)
+          return HttpResponse ('{"status": "503", "errorString": "Irods files not in expected format"}', content_type='application/json', status=503)
         except ExceptionOpenIDAuthUrl:
-          return HttpResponse ('{"status": "401", "message": "Token not accepted by irods, Auth URL sent by irods"}', content_type='application/json', status=401)
+          return HttpResponse ('{"status": "401", "errorString": "Token not accepted by irods, Auth URL sent by irods"}', content_type='application/json', status=401)
         except:
-          return HttpResponse ('{"status": "503", "message": "Error connecting to irods backend"}', content_type='application/json', status=503)
+          return HttpResponse ('{"status": "503", "errorString": "Error connecting to irods backend"}', content_type='application/json', status=503)
         return HttpResponse (json.dumps(d, sort_keys=True, indent=4), content_type='application/json')
 
+
+def Dataset(request, doi):
+    with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid',
+         openid_provider='keycloak_openid', user=request.user.irods_username,
+        zone=IRODS['zone'], access_token=request.session.get('oidc_access_token', None),
+        block_on_authURL=False
+        ) as session:
+        try:
+          results = session.query(Collection, CollectionMeta).filter(
+                         Criterion('=', CollectionMeta.name, 'identifier')).filter( 
+                         Criterion('=', CollectionMeta.value, doi)
+                         ).execute()
+        except ExceptionOpenIDAuthUrl:
+          return HttpResponse ('{"status": "401", "errorString": "Token not accepted by irods, Auth URL sent by irods"}', content_type='application/json', status=401)
+        except:
+          return HttpResponse ('{"status": "503", "errorString": "Error connecting to irods backend"}', content_type='application/json', status=503)
+        if len(results)==0:
+          return HttpResponse ('{}',  content_type='application/json')
+        result=results[0]
+        coll=session.collections.get(result[Collection.name])
+        d={}
+        d['name']=coll.name
+        datasetMeta(d, coll.metadata)
+
+        return HttpResponse (json.dumps(d, sort_keys=True, indent=4), content_type='application/json')
+           
 
 def provider_logout(request):
     # See your provider's documentation for details on if and how this is
