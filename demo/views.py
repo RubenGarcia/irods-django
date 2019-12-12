@@ -16,6 +16,8 @@ from django.urls import reverse
 from django.conf import settings
 from  django.http import HttpResponse
 
+from django.views.decorators.csrf import csrf_exempt
+
 from demo.settings import IRODS
 
 import urllib.parse
@@ -28,16 +30,22 @@ from irods.column import Criterion
 
 from irods.connection import ExceptionOpenIDAuthUrl
 
+logger = logging.getLogger('django')
+
 # Create your views here.
 
 @login_required
 def getToken(request):
     return render(request, 'demo/getToken.html', {'token':request.session.get('oidc_access_token', None)})
 
+def requestValidateToken(token):
+    return requests.get (IRODS['openid_microservice']+'/validate_token',
+             params = {'provider': 'keycloak_openid', 'access_token': token})
+
+
 @login_required
 def validateToken(request):
-    req = requests.get ('https://irods-auth.lexis.lrz.de/validate_token', 
-             params = {'provider': 'keycloak_openid', 'access_token': request.session.get('oidc_access_token', None)})
+    req = requestValidateToken (request.session.get('oidc_access_token', None))
     if req.status_code == 200:
        return render(request, 'demo/validateToken.html', {'response': req.status_code, 'json': req.json()})
     else:
@@ -107,11 +115,10 @@ def irods(request):
           return render (request, "demo/irods.html", {"info": "503 Irods service or authentification backend down", "data":{}}, status=503)
         return render (request, "demo/irods.html", {"info":"200", "data":json.dumps(d, sort_keys=True, indent=4)})
 
-@login_required
-def listDatasets(request):
+def _listDatasets(token, user):
     with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid',
-        openid_provider='keycloak_openid', user=request.user.irods_name,
-        zone=IRODS['zone'], access_token=request.session.get('oidc_access_token', None),
+        openid_provider='keycloak_openid', user=user,
+        zone=IRODS['zone'], access_token=token,
         block_on_authURL=False
         ) as session:
         coll_manager = CollectionManager(session)
@@ -125,11 +132,52 @@ def listDatasets(request):
           return HttpResponse ('{"status": "503", "errorString": "Error connecting to irods backend"}', content_type='application/json', status=503)
         return HttpResponse (json.dumps(d, sort_keys=True, indent=4), content_type='application/json')
 
+@login_required
+def GetUserAndTokenWeb(request):
+    token=request.session.get('oidc_access_token', None)
+    user=request.user.irods_name
+    return (token, user)
 
-def Dataset(request, doi):
+@csrf_exempt
+def GetUserAndTokenAPI(request):
+    try:
+      token=request.headers.get('Authorization').split(" ")[1]
+    except:
+      return (None, None, HttpResponse ('{"status": "401", "errorString": "Invalid Authorization"}', content_type='application/json'))
+    req = requestValidateToken (token)
+    if req.status_code == 200:
+       j=req.json()
+       if j['active']==False:
+         return (None, None, HttpResponse ('{"status": "401", "errorString": "Invalid Token"}', content_type='application/json'))
+       else:
+         user=j['username']
+         return (token, user, None)
+    else:
+       return (None, None, HttpResponse ('{"status": "%d", "errorString": "Error connecting to token validator service"}'%req.status_code))
+    
+
+def listDatasetsWeb(request):
+    (token, user) = GetUserAndTokenWeb(request)
+    return _listDatasets(token, user)
+
+@csrf_exempt
+def listDatasetsAPI(request):
+    #token=request.session.get('token', None)
+    (token, user, err)=GetUserAndTokenAPI(request)
+    if err==None:
+       return _listDatasets(token, user)
+    return err
+
+def listDatasets(request):
+    if request.content_type=='application/json' or request.content_type=='text/json':
+      return listDatasetsAPI(request)
+    else:
+      return listDatasetsWeb(request)
+
+def _Dataset(doi, token, user):
     with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid',
-         openid_provider='keycloak_openid', user=request.user.irods_name,
-        zone=IRODS['zone'], access_token=request.session.get('oidc_access_token', None),
+         openid_provider='keycloak_openid', user=user,
+        zone=IRODS['zone'], access_token=token,
         block_on_authURL=False
         ) as session:
         try:
@@ -151,6 +199,25 @@ def Dataset(request, doi):
 
         return HttpResponse (json.dumps(d, sort_keys=True, indent=4), content_type='application/json')
 
+@csrf_exempt
+def DatasetAPI(request, doi):
+    (token, user, err)=GetUserAndTokenAPI(request)
+    if err==None:
+       return _Dataset(doi, token, user)
+    return err
+
+@login_required
+def DatasetWeb(request, doi):
+    (token, user) = GetUserAndTokenWeb(request)
+    return _Dataset (doi, token, user)
+
+def Dataset(request, doi):
+    if request.content_type=='application/json' or request.content_type=='text/json':
+      return DatasetAPI(request, doi)
+    else:
+      return DatasetWeb(request, doi)
+
+
 def gatherData(session, results):
         i=[]
         for r in results:
@@ -161,6 +228,15 @@ def gatherData(session, results):
            i.append(d)
         return i
 
+def gatherDataC(session, colls):
+        i=[]
+        for r in colls:
+           d={}
+           d['name']=r.name
+           datasetMeta(d, r.metadata)
+           i.append(d)
+        return i
+    
            
 def Year(request, year):
     with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid',
@@ -183,9 +259,63 @@ def Year(request, year):
         i=gatherData(session, results)
         return HttpResponse (json.dumps(i, sort_keys=True, indent=4), content_type='application/json') 
 
+def CollChecks(coll, checks):
+    for key in checks:
+        found = False
+        for y in coll.metadata.get_all(key):
+            if y.value == str(checks[key]):
+               found= True
+               break
+        if found == False:
+           return False
+    return True
+
+def findCols(coll, checks):
+    cols=[]
+    res= CollChecks (coll, checks)
+    if res == True:
+       cols.append(coll)
+    for col in coll.subcollections:
+           l=findCols(col, checks)
+           cols+=l
+    return cols
+
+@csrf_exempt
+def SearchMeta(request):
+#API, pass as json an array with the query terms: e.g. ["Year": "1900", "Author": "1"]
+    (token, user, err)=GetUserAndTokenAPI(request)
+    if err!=None:
+       return err
+    with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid',
+        openid_provider='keycloak_openid', user=user,
+        zone=IRODS['zone'], access_token=token,
+        block_on_authURL=False
+        ) as session:
+#Multiple filters on the same column overwrite, so 
+#imeta qu -C publicationYear = 1900 and relatedIdentifier = "doi://lexis-datasets/wp5/datasetpublicx1"
+#does not work. Doing the set-intersection ourselves is one possibility, or going through all collections recursively.
+
+#https://github.com/irods/python-irodsclient/issues/135
+        try:
+          q=json.loads(request.body.decode('utf-8'))
+          logger.info('/'+IRODS['zone'])
+          root=session.collections.get('/'+IRODS['zone'])
+#          pdb.set_trace()
+          results = findCols(root, q)
+        except ExceptionOpenIDAuthUrl:
+          return HttpResponse ('{"status": "401", "errorString": "Token not accepted by irods, Auth URL sent by irods"}', content_type='application/json', status=401)
+        except CollectionDoesNotExist:
+          return HttpResponse ('{"status": "503", "errorString": "Irods permissions too restrictive for this user"}', content_type='application/json', status=503)
+        except:
+          return HttpResponse ('{"status": "503", "errorString": "Error connecting to irods backend"}', content_type='application/json', status=503)
+
+        i=gatherDataC(session, results)
+        return HttpResponse (json.dumps(i, sort_keys=True, indent=4), content_type='application/json')
+
+
 def Meta(request, meta, value):
     with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid',
-         openid_provider='keycloak_openid', user=request.user.irods_name,
+        openid_provider='keycloak_openid', user=request.user.irods_name,
         zone=IRODS['zone'], access_token=request.session.get('oidc_access_token', None),
         block_on_authURL=False
         ) as session:

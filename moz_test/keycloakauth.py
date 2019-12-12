@@ -11,6 +11,7 @@ from mozilla_django_oidc.auth import OIDCAuthenticationBackend
 
 class MyOIDCAB(OIDCAuthenticationBackend):
     def update_user(self, user, claims):
+        print("claims=<%s>"%claims)
         user.first_name = claims.get('given_name', '')
         user.last_name = claims.get('family_name', '')
         user.irods_name = claims.get('preferred_username', '')
