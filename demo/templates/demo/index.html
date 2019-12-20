@@ -8,15 +8,18 @@
     last_name: {{ user.last_name }}<br/>
     irods_name: {{user.irods_name}}
 <br/>
-<a href={% url 'listDatasets' %}>/dataset endpoint</a><br/>
-<a href={% url 'irods' %}>Check irods files</a><br/>
-<a href={% url 'getToken'  %}>GetToken</a><br/>
-<a href={% url 'validateToken'  %}>ValidateToken</a><br/>
+<a href="{% url 'listDatasets' %}">/dataset endpoint</a><br/>
+<a href="{% url 'irods' %}">Check irods files</a><br/>
+<a href="{% url 'getToken'  %}">GetToken</a><br/>
+<a href="{% url 'validateToken'  %}">ValidateToken</a><br/>
 </p>
 <p>
 If your organization uses GridFTP, you can request that LEXIS is recognized within your GridFTP
 by the use of the following
-<a href={% url 'cert' %}>public certificate</a>.
+<a href="{% url 'cert' %}">public certificate</a>.
+</p>
+<p>
+<a href="{% url 'globus' %}">Request globus transfer</a>
 </p>
 <p>
 See also <a href="https://openproject.it4i.cz/projects/lexis-data-system/wiki/ddi-meta-data-organisation">WP3 ddi-meta-data-organisation</a><br/>

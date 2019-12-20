@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import views, globus_views
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -13,5 +13,7 @@ urlpatterns = [
     path('token', views.getToken, name='getToken'),
     path('validate_token', views.validateToken, name='validateToken'),
     path('cert', views.cert, name='cert'),
+
+    path('globus', globus_views.globusTransfer, name='globus'),
 ]
 

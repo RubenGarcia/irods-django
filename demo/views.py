@@ -20,7 +20,7 @@ from django.views.static import serve
 
 from django.views.decorators.csrf import csrf_exempt
 
-from demo.settings import IRODS
+from demo.settings import IRODS, GLOBUS
 
 import urllib.parse
 
@@ -135,7 +135,7 @@ def _listDatasets(token, user):
         return HttpResponse (json.dumps(d, sort_keys=True, indent=4), content_type='application/json')
 
 def _cert(request):
-    filepath = 'private/cert.pem'
+    filepath = GLOBUS["cert"]
     return serve(request, os.path.basename(filepath), os.path.dirname(filepath))
 
 @csrf_exempt
