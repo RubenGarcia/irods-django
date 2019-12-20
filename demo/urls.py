@@ -12,5 +12,6 @@ urlpatterns = [
     path('dataset/search/metadata/', views.SearchMeta),
     path('token', views.getToken, name='getToken'),
     path('validate_token', views.validateToken, name='validateToken'),
+    path('cert', views.cert, name='cert'),
 ]
 

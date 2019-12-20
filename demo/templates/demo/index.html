@@ -2,6 +2,7 @@
 
 {% block content %}
     {% if user.is_authenticated %}
+<p>
     email: {{ user.email }}<br/>
     first_name: {{ user.first_name }}<br/>
     last_name: {{ user.last_name }}<br/>
@@ -11,7 +12,13 @@
 <a href={% url 'irods' %}>Check irods files</a><br/>
 <a href={% url 'getToken'  %}>GetToken</a><br/>
 <a href={% url 'validateToken'  %}>ValidateToken</a><br/>
-<br/><br/>
+</p>
+<p>
+If your organization uses GridFTP, you can request that LEXIS is recognized within your GridFTP
+by the use of the following
+<a href={% url 'cert' %}>public certificate</a>.
+</p>
+<p>
 See also <a href="https://openproject.it4i.cz/projects/lexis-data-system/wiki/ddi-meta-data-organisation">WP3 ddi-meta-data-organisation</a><br/>
 <a href="https://code.it4i.cz/lexis/wp8/wp8-architecture/blob/master/data-service/data-service-swagger-definition.yaml">Swagger</a><br/>
 <a href="https://code.it4i.cz/lexis/wp8/dataset-management-interface/blob/master/data-service-swagger-definition.yaml">New Swagger with search</a><br/>
@@ -19,6 +26,6 @@ See also <a href="https://openproject.it4i.cz/projects/lexis-data-system/wiki/dd
 <a href="https://irods-api.lexis.lrz.de/demo/dataset/doi/doi%3A%2F%2Flexis-datasets%2Fwp5%2Fdatasetpublicx1">Example doi query (doi://lexis-datasets/wp5/datasetpublicx1)</a><br/>
 <a href="https://irods-api.lexis.lrz.de/demo/dataset/search/year/1900">Example year search (1900)</a><br/>
 <a href="https://irods-api.lexis.lrz.de/demo/dataset/search/metadata/owner/1">Example metadata search owner = 1</a><br/>
-
+</p>
     {% endif %}
 {% endblock %}

@@ -9,12 +9,14 @@ import logging
 import urllib.parse
 import json
 import requests
+import os.path
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.conf import settings
-from  django.http import HttpResponse
+from django.http import HttpResponse
+from django.views.static import serve
 
 from django.views.decorators.csrf import csrf_exempt
 
@@ -24,7 +26,7 @@ import urllib.parse
 
 from irods.session import iRODSSession
 from irods.manager.collection_manager import CollectionManager
-from irods.exception import CollectionDoesNotExist
+from irods.exception import CollectionDoesNotExist, CAT_NO_ACCESS_PERMISSION
 from irods.models import DataObject, DataObjectMeta, Collection, CollectionMeta
 from irods.column import Criterion
 
@@ -131,6 +133,27 @@ def _listDatasets(token, user):
         except:
           return HttpResponse ('{"status": "503", "errorString": "Error connecting to irods backend"}', content_type='application/json', status=503)
         return HttpResponse (json.dumps(d, sort_keys=True, indent=4), content_type='application/json')
+
+def _cert(request):
+    filepath = 'private/cert.pem'
+    return serve(request, os.path.basename(filepath), os.path.dirname(filepath))
+
+@csrf_exempt
+def certAPI(request):
+    (token, user, resp)=GetUserAndTokenAPI(request)
+    if resp!=None:
+       return resp
+    return _cert(request)
+
+@login_required
+def certWeb(request):
+    return _cert(request)
+
+def cert(request):
+    if request.content_type=='application/json' or request.content_type=='text/json':
+      return certAPI(request)
+    else:
+      return certWeb(request)
 
 @login_required
 def GetUserAndTokenWeb(request):
@@ -294,6 +317,7 @@ def SearchMeta(request):
 #Multiple filters on the same column overwrite, so 
 #imeta qu -C publicationYear = 1900 and relatedIdentifier = "doi://lexis-datasets/wp5/datasetpublicx1"
 #does not work. Doing the set-intersection ourselves is one possibility, or going through all collections recursively.
+#https://github.com/irods/python-irodsclient/issues/135#issuecomment-564554609
 
 #https://github.com/irods/python-irodsclient/issues/135
         try:
@@ -308,9 +332,29 @@ def SearchMeta(request):
           return HttpResponse ('{"status": "503", "errorString": "Irods permissions too restrictive for this user"}', content_type='application/json', status=503)
         except:
           return HttpResponse ('{"status": "503", "errorString": "Error connecting to irods backend"}', content_type='application/json', status=503)
-
-        i=gatherDataC(session, results)
-        return HttpResponse (json.dumps(i, sort_keys=True, indent=4), content_type='application/json')
+        if request.method=='GET':
+          i=gatherDataC(session, results)
+          return HttpResponse (json.dumps(i, sort_keys=True, indent=4), content_type='application/json')
+        elif request.method=='DELETE':
+          logger.info("deleting")
+          noPerm=[]
+          for r in results:
+            try:
+              r.remove()
+            except CAT_NO_ACCESS_PERMISSION:
+              noPerm.append(r)
+              logger.info("not deleted: %s"%r.name)
+          if noPerm==[]:
+            logger.info("204")
+            return HttpResponse ('{"status": "204", "errorString": "Collections successfully deleted"}', content_type='application/json', status=204)
+          else:
+            logger.info("401")
+            resp={"status": "401", "errorString": "Some collections were not deleted due to insufficient permissions by user"}
+            res=[]
+            for c in noPerm:
+                 res.append({"name":c.name})
+            resp["permission_error"]=res
+            return HttpResponse (json.dumps(resp), content_type='application/json', status=401)
 
 
 def Meta(request, meta, value):
