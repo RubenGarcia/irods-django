@@ -31,6 +31,18 @@ def _globusTransfer(code, verifier):
     resp="Your endpoints<br/>"
     for ep in tc.endpoint_search(filter_scope="my-endpoints"):
         resp+="[{}] {}<br/>".format(ep["id"], ep["display_name"])
+
+    resp+="<br/>All LRZ endpoints<br/>"
+    list= tc.endpoint_search("LRZ")  
+    for ep in list:
+        resp+="[{}] {}<br/>".format(ep["id"], ep["display_name"])
+#        print (ep["display_name"])
+        list=tc.endpoint_server_list(ep["id"])
+#        for srv in list["DATA"]:
+#             print(srv)
+#            resp+=srv["uri"]
+#            resp+="<br/>"
+        
     return resp
 
 @login_required
