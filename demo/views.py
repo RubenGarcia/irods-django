@@ -374,7 +374,10 @@ def Meta(request, meta, value):
           return HttpResponse ('{"status": "503", "errorString": "Error connecting to irods backend"}', content_type='application/json', status=503)
         i=gatherData(session, results)
         return HttpResponse (json.dumps(i, sort_keys=True, indent=4), content_type='application/json')
- 
+
+@login_required
+def DatasetStatus(request):
+    pass 
 
 def provider_logout(request):
     # See your provider's documentation for details on if and how this is
