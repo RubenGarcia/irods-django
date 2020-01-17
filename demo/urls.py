@@ -30,6 +30,8 @@ urlpatterns = [
     path('dataset/search/metadata/', views.SearchMeta),
     path('token', views.getToken, name='getToken'),
     path('validate_token', views.validateToken, name='validateToken'),
+#This gives the public key of the server
+#Internally, call to low-level routines
     path('cert', views.cert, name='cert'),
 #User creation. Inputs: irods username, keycloak code (aua), irods usertype, irods zone
 #User is added to public group so he can access public data.
