@@ -12,3 +12,7 @@ GLOBUS = {
   'key': '<key-file>',
   'cert': '<certificate-file>',
 }
+
+STAGING= {
+  'path': '<path>'
+}
