@@ -10,6 +10,9 @@ import urllib.parse
 import json
 import requests
 import os.path
+import base64
+import random
+import string
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
@@ -18,9 +21,9 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.views.static import serve
 
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
-from demo.settings import IRODS, GLOBUS
+from demo.settings import IRODS, GLOBUS, STAGING
 
 import urllib.parse
 
@@ -33,6 +36,11 @@ from irods.column import Criterion
 from irods.connection import ExceptionOpenIDAuthUrl
 
 logger = logging.getLogger('django')
+
+def randomString(stringLength=10):
+    """Generate a random string of fixed length """
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(stringLength))
 
 # Create your views here.
 
@@ -113,8 +121,8 @@ def irods(request):
           return render (request, "demo/irods.html", {"info": "503 irods.exception.CollectionDoesNotExist", "data":{}}, status=503)
         except ExceptionOpenIDAuthUrl:
           return render (request, "demo/irods.html", {"info":"401 OpenID Auth URL received; token not valid or not validated by broker. Or user unknown to iRODS.", "data":{}}, status=401)
-        except:
-          return render (request, "demo/irods.html", {"info": "503 Irods service or authentification backend down", "data":{}}, status=503)
+#        except Exception as e:
+#          return render (request, "demo/irods.html", {"info": "503 Irods service or authentification backend down", "data":{"exception" + str(e)}}, status=503)
         return render (request, "demo/irods.html", {"info":"200", "data":json.dumps(d, sort_keys=True, indent=4)})
 
 def _listDatasets(token, user):
@@ -191,11 +199,65 @@ def listDatasetsAPI(request):
        return _listDatasets(token, user)
     return err
 
+@csrf_protect
 def listDatasets(request):
     if request.content_type=='application/json' or request.content_type=='text/json':
       return listDatasetsAPI(request)
     else:
       return listDatasetsWeb(request)
+
+
+#json only
+#PUT creates a new dataset
+#{push_method="ssh", "grid", "globus", "directupload",
+#file="file contents", used in directupload
+#URL="url", used in others
+#name="dataset name",
+#access="user", "group", "project", "public"
+#project=""
+#group=""
+#metadata=[]
+#compress_method='file' 'tar' 'targz', ...
+#}
+#receive an identifier back (collectionid), which can be low-level queried to see if complete/obsolete (error in transfer)/in progress
+@csrf_exempt
+def uploadDatasetAPI(request):
+    pdb.set_trace()
+    if request.content_type!='application/json' and request.content_type!='text/json':
+       return HttpResponse ('{"status": "400", "errorString": "Malformed request"}', content_type='application/json', status=400)
+    (token, user, err)=GetUserAndTokenAPI(request)
+    if err==None:
+       try:
+          q=json.loads(request.body.decode('utf-8'))
+          name=q['name']
+          access=q['access']
+          project=q['project']
+          group=q['group']
+          metadata=q['metadata']
+          method=q['push_method']
+          if method == "directupload":
+             myfile=base64.b64decode(q['file'])
+             compress=q.get('compress_method', 'file')
+              
+             basepath=randomString(20)
+             os.mkdir(STAGING['path']+'/'+basepath)
+             with open(STAGING['path']+'/'+basepath+'/data', 'wb') as f:
+                f.write(myfile)
+                #pass information to low-level function to integrate data into irods
+                return HttpResponse ('{"status": "200"}', content_type='application/json')
+          else:
+             return HttpResponse ('{"status": "400", "errorString": "Unsupported push_method"}', content_type='application/json', status=400)
+       except:
+          return HttpResponse ('{"status": "400", "errorString": "Malformed request"}', content_type='application/json', status=400)
+    return err
+
+@csrf_exempt
+def Datasets(request):
+    if request.method=='GET':
+       return listDatasets(request)
+    elif request.method=='POST':
+       return uploadDatasetAPI(request)
+    return HttpResponse ('{"status": "400", "errorString": "Malformed request"}', content_type='application/json', status=400)
 
 def _Dataset(doi, token, user):
     with iRODSSession(host=IRODS['host'], port=IRODS['port'], authentication_scheme='openid',
@@ -318,8 +380,8 @@ def SearchMeta(request):
 #imeta qu -C publicationYear = 1900 and relatedIdentifier = "doi://lexis-datasets/wp5/datasetpublicx1"
 #does not work. Doing the set-intersection ourselves is one possibility, or going through all collections recursively.
 #https://github.com/irods/python-irodsclient/issues/135#issuecomment-564554609
-
 #https://github.com/irods/python-irodsclient/issues/135
+#rgh: after applying the patch, this should now work
         try:
           q=json.loads(request.body.decode('utf-8'))
           logger.info('/'+IRODS['zone'])

@@ -5,16 +5,18 @@ from . import views, globus_views
 urlpatterns = [
     path('', views.index, name='index'),
     path('irods', views.irods, name='irods'),
-    path('dataset', views.listDatasets, name='listDatasets'),
+    path('dataset', views.Datasets, name='listDatasets'),
 #GET lists
 #PUT creates a new dataset
-#{push_methods="ssh", "grid", "globus", "directupload",
+#{push_methods"ssh", "grid", "globus", "directupload",
 #file="file contents", used in directupload
+#compress_method='file' 'tar' 'targz', ...
 #URL="url", used in others
 #name="dataset name",
 #access="user", "group", "project", "public"
 #project=""
 #group=""
+#metadata=[]
 #}
 #receive an identifier back (collectionid), which can be low-level queried to see if complete/obsolete (error in transfer)/in progress
 
@@ -22,7 +24,6 @@ urlpatterns = [
 #get  success/failure/in progress
 #parameter identifier back (collectionid) from 'dataset'
 #internally metadata read.
-
 
     path('dataset/doi/<path:doi>', views.Dataset),
     path('dataset/search/year/<int:year>', views.Year),
