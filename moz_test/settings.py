@@ -52,6 +52,9 @@ AUTHENTICATION_BACKENDS = (
     # ...
 )
 
+#for file upload within json
+DATA_UPLOAD_MAX_MEMORY_SIZE=100*1024*1024
+
 OIDC_RP_CLIENT_ID = 'broker'
 OIDC_RP_CLIENT_SECRET = 'ae93668d-48e0-40a5-a9a5-4df84e8629c5'
 

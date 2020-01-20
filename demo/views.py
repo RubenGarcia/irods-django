@@ -20,6 +20,7 @@ from django.urls import reverse
 from django.conf import settings
 from django.http import HttpResponse
 from django.views.static import serve
+from django.core.exceptions import RequestDataTooBig
 
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
@@ -80,7 +81,6 @@ def datasetMeta(d, metadata):
 #https://github.com/theferrit32/python-irodsclient/blob/openid/examples/pyils.py
 def ls_coll_public(coll):
         i=[]
-#        pdb.set_trace()
         for group in coll.subcollections:
             g={}
             g['name']=group.name
@@ -113,7 +113,6 @@ def irods(request):
         zone=IRODS['zone'], access_token=request.session.get('oidc_access_token', None),
         block_on_authURL=False
         ) as session:
-#        pdb.set_trace()
         coll_manager = CollectionManager(session)
         try:
           d=ls_coll(coll_manager.get('/'+IRODS['zone']))
@@ -247,6 +246,8 @@ def uploadDatasetAPI(request):
                 return HttpResponse ('{"status": "200"}', content_type='application/json')
           else:
              return HttpResponse ('{"status": "400", "errorString": "Unsupported push_method"}', content_type='application/json', status=400)
+       except RequestDataTooBig:
+          return HttpResponse ('{"status": "400", "errorString": "Maximum file size exceeded, use a different transfer method"}',  content_type='application/json', status=400)
        except:
           return HttpResponse ('{"status": "400", "errorString": "Malformed request"}', content_type='application/json', status=400)
     return err
@@ -386,7 +387,6 @@ def SearchMeta(request):
           q=json.loads(request.body.decode('utf-8'))
           logger.info('/'+IRODS['zone'])
           root=session.collections.get('/'+IRODS['zone'])
-#          pdb.set_trace()
           results = findCols(root, q)
         except ExceptionOpenIDAuthUrl:
           return HttpResponse ('{"status": "401", "errorString": "Token not accepted by irods, Auth URL sent by irods"}', content_type='application/json', status=401)
