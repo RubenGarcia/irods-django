@@ -14,5 +14,7 @@ GLOBUS = {
 }
 
 STAGING= {
-  'path': '<path>'
+  'path': '<path>',
+  'globus_endpoint': '<globus_endpoint>',
+  'globus_path': '<globus_path>'
 }
