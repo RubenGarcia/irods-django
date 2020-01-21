@@ -11,10 +11,10 @@ GLOBUS = {
   'client-id': '<client-id>',
   'key': '<key-file>',
   'cert': '<certificate-file>',
+  'endpoint': '<globus_endpoint>',
+  'path': '<globus_path>'
 }
 
 STAGING= {
-  'path': '<path>',
-  'globus_endpoint': '<globus_endpoint>',
-  'globus_path': '<globus_path>'
+  'path': '<nfs path>',
 }
