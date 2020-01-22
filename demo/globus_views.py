@@ -13,7 +13,7 @@ import pdb
 
 #https://globus-sdk-python.readthedocs.io/en/latest/tutorial/
 
-def _globusTransfer(request, code, verifier, token, transfer_token, endpoint, path, dataset):
+def _globusTransfer(request, code, verifier, token, transfer_token, endpoint, path, dataset, search):
     client = None
     if token == None:
       client = globus_sdk.NativeAppAuthClient(GLOBUS["client-id"])
@@ -104,22 +104,21 @@ def _globusTransfer(request, code, verifier, token, transfer_token, endpoint, pa
     for ep in tc.endpoint_search(filter_scope="my-endpoints"):
         resp+='[<a href="globus?endpoint={}&token={}&transfer_token={}">{}</a>] {}<br/>'.format(ep["id"], token, transfer_token, ep["id"], ep["display_name"])
 
-    resp+="<br/>All LRZ endpoints<br/>"
-    list= tc.endpoint_search("LRZ")  
-    for ep in list:
+#    resp+="<br/>All LRZ endpoints<br/>"
+    if search!=None:
+       resp+='<br/>Endpoint query results for search: {}<br/>'.format(search)
+       list= tc.endpoint_search(search)  
+       for ep in list:
         resp+='[<a href="globus?endpoint={}&token={}&transfer_token={}">{}</a>] {}<br/>'.format(ep["id"], token, transfer_token, ep["id"], ep["display_name"])
-#        print (ep["display_name"])
-        list=tc.endpoint_server_list(ep["id"])
-#        for srv in list["DATA"]:
-#             print(srv)
-#            resp+=srv["uri"]
-#            resp+="<br/>"
+    else:
+       resp+=('<form action = "globus">Endpoint query: <input type="text" name="search">'+
+               '<input type="hidden" name="token" value="{}"><input type="hidden" name="transfer_token" value="{}">'+
+               '<input type="submit" value="Submit"></input></form>').format(token, transfer_token)
         
     return resp
 
 @login_required
 def globusTransferWeb(request):
-    print (request.GET)
     code = request.GET.get ("code", None)
     verifier = request.GET.get ("state", None)
     endpoint = request.GET.get ("endpoint", None)
@@ -127,6 +126,7 @@ def globusTransferWeb(request):
     token = request.GET.get ("token", None)
     transfer_token = request.GET.get ("transfer_token", None)
     dataset = request.GET.get ("dataset", None)
+    endpointsearch = request.GET.get ("search", None)
     if code == None and token == None:
         verifier = randomString(128)
         client = globus_sdk.NativeAppAuthClient(GLOBUS["client-id"])
@@ -134,7 +134,7 @@ def globusTransferWeb(request):
                   verifier=verifier, state=verifier)
         authorize_url = client.oauth2_get_authorize_url()
         return redirect (authorize_url)
-    result=_globusTransfer(request, code, verifier, token, transfer_token, endpoint, path, dataset)
+    result=_globusTransfer(request, code, verifier, token, transfer_token, endpoint, path, dataset, endpointsearch)
 
     return render(request, 'demo/globus.html', {'info':result})
 
