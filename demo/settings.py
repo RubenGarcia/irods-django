@@ -12,7 +12,9 @@ GLOBUS = {
   'key': '<key-file>',
   'cert': '<certificate-file>',
   'endpoint': '<globus_endpoint>',
-  'path': '<globus_path>'
+  'path': '<globus_path>',
+  'auth_refresh_token': '<auth_refresh_token>',
+  'transfer_refresh_token': '<transfer_refresh_token>'
 }
 
 STAGING= {
