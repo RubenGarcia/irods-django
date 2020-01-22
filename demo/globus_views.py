@@ -5,16 +5,16 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 
-import random
-import string
 import globus_sdk
+
+from demo.utils import randomString
 
 import pdb 
 
 #https://globus-sdk-python.readthedocs.io/en/latest/tutorial/
 
-def _globusTransfer(request, code, verifier, token, transfer_token, endpoint):
-#    pdb.set_trace()
+def _globusTransfer(request, code, verifier, token, transfer_token, endpoint, path, dataset):
+    client = None
     if token == None:
       client = globus_sdk.NativeAppAuthClient(GLOBUS["client-id"])
       client.oauth2_start_flow(redirect_uri="https://irods-api.lexis.lrz.de/demo/globus", verifier=verifier, state=verifier)
@@ -34,7 +34,69 @@ def _globusTransfer(request, code, verifier, token, transfer_token, endpoint):
     tc = globus_sdk.TransferClient(authorizer=authorizer)
 
     if endpoint != None:
-        resp = "endpoind received: "+endpoint
+#        pdb.set_trace()
+        resp = "Endpoind received: {} <br/>".format(endpoint) 
+        if path != None:
+           resp+='Path: {} <br/>'.format(path)
+           if dataset == None:
+              resp += '<a href="globus?endpoint={}&path={}&token={}&transfer_token={}&dataset=Y">Transfer this dataset</a><br/><br/>'.format(endpoint, path, 
+                         token, transfer_token)
+
+        if dataset=='Y':
+           resp += 'Requesting transfer to DDI'
+           basepath=randomString(20)
+           dest = GLOBUS["path"]+"/"+basepath
+
+           if client==None:
+              client = globus_sdk.NativeAppAuthClient(GLOBUS["client-id"])
+
+           WP3authorizer = globus_sdk.RefreshTokenAuthorizer(
+              GLOBUS["transfer_refresh_token"], client) 
+
+           WP3tc=globus_sdk.TransferClient(authorizer=WP3authorizer)
+           WP3tc.operation_mkdir (GLOBUS["endpoint"], path=dest)
+
+#rgh: no way to use both tokens together to permit the transfer.
+#rgh: give user writing permission at the newly created dest
+           ac = globus_sdk.AuthClient(authorizer=globus_sdk.AccessTokenAuthorizer(token))
+           identity_id=ac.oauth2_userinfo()['sub']
+
+           resp += 'Your identity code: ' +identity_id+'<br/>'
+
+           rule_data = {
+             "DATA_TYPE": "access",
+             "principal_type": "identity",
+             "principal": identity_id,
+             "path": dest+"/",
+             "permissions": "rw",
+           }
+           result = WP3tc.add_endpoint_acl_rule(GLOBUS["endpoint"], rule_data)
+           rule_id = result["access_id"]
+
+           tdata = globus_sdk.TransferData(tc, endpoint,
+                                 GLOBUS["endpoint"],
+                                 label="Dataset Ingest for Lexis, "+path,
+                                 sync_level="exists")
+           tdata.add_item(path, dest, recursive=True)
+           transfer_result = tc.submit_transfer(tdata)
+#           pdb.set_trace()
+           resp += "task_id ="+ str(transfer_result["task_id"])+"; you will receive an email after transfer is complete.<br/>"
+           return resp
+
+        try:
+          for entry in tc.operation_ls(endpoint, path=path):
+            name=entry["name"]
+            if path == None:
+                fullpath=name
+            else:
+                fullpath=path+'/'+name
+            if entry["type"] == "dir":
+                resp+='Name: [<a href="globus?endpoint={}&path={}&token={}&transfer_token={}">{}]</a>, Type: {}<br/>'.format(endpoint, fullpath, 
+                     token, transfer_token, name, entry["type"])
+            else:
+                resp+='Name: [{}], Type: {}<br/>'.format(name, entry["type"])
+        except globus_sdk.exc.TransferAPIError as e:
+               return ("Error when listing directory, message: "+e.message )
         return resp
 
 
@@ -45,7 +107,7 @@ def _globusTransfer(request, code, verifier, token, transfer_token, endpoint):
     resp+="<br/>All LRZ endpoints<br/>"
     list= tc.endpoint_search("LRZ")  
     for ep in list:
-        resp+="[<a href="globus?endpoint={}&token={}&transfer_token={}">{}</a>] {}<br/>".format(ep["id"], token, transfer_token, ep["display_name"])
+        resp+='[<a href="globus?endpoint={}&token={}&transfer_token={}">{}</a>] {}<br/>'.format(ep["id"], token, transfer_token, ep["id"], ep["display_name"])
 #        print (ep["display_name"])
         list=tc.endpoint_server_list(ep["id"])
 #        for srv in list["DATA"]:
@@ -61,16 +123,18 @@ def globusTransferWeb(request):
     code = request.GET.get ("code", None)
     verifier = request.GET.get ("state", None)
     endpoint = request.GET.get ("endpoint", None)
+    path = request.GET.get ("path", None)
     token = request.GET.get ("token", None)
     transfer_token = request.GET.get ("transfer_token", None)
+    dataset = request.GET.get ("dataset", None)
     if code == None and token == None:
-        verifier = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(128)])
+        verifier = randomString(128)
         client = globus_sdk.NativeAppAuthClient(GLOBUS["client-id"])
         client.oauth2_start_flow(redirect_uri="https://irods-api.lexis.lrz.de/demo/globus", 
                   verifier=verifier, state=verifier)
         authorize_url = client.oauth2_get_authorize_url()
         return redirect (authorize_url)
-    result=_globusTransfer(request, code, verifier, token, transfer_token, endpoint)
+    result=_globusTransfer(request, code, verifier, token, transfer_token, endpoint, path, dataset)
 
     return render(request, 'demo/globus.html', {'info':result})
 

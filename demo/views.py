@@ -11,8 +11,6 @@ import json
 import requests
 import os.path
 import base64
-import random
-import string
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
@@ -36,12 +34,9 @@ from irods.column import Criterion
 
 from irods.connection import ExceptionOpenIDAuthUrl
 
-logger = logging.getLogger('django')
+from demo.utils import randomString
 
-def randomString(stringLength=10):
-    """Generate a random string of fixed length """
-    letters = string.ascii_lowercase
-    return ''.join(random.choice(letters) for i in range(stringLength))
+logger = logging.getLogger('django')
 
 # Create your views here.
 
