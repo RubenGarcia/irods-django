@@ -132,7 +132,11 @@ def _listDatasets(token, user):
           return HttpResponse ('{"status": "503", "errorString": "Irods files not in expected format"}', content_type='application/json', status=503)
         except ExceptionOpenIDAuthUrl:
           return HttpResponse ('{"status": "401", "errorString": "Token not accepted by irods, Auth URL sent by irods"}', content_type='application/json', status=401)
+        except KeyError as e:
+          return HttpResponse ('{"status": "503", "errorString": "Error connecting to irods backend (%s)"}' % str(e), content_type='application/json', status=503)
         except:
+          print ("Exception retrieving info from irods")
+          print (sys.exc_info()[0])
           return HttpResponse ('{"status": "503", "errorString": "Error connecting to irods backend"}', content_type='application/json', status=503)
         return HttpResponse (json.dumps(d, sort_keys=True, indent=4), content_type='application/json')
 
@@ -195,6 +199,7 @@ def listDatasetsAPI(request):
 
 @csrf_protect
 def listDatasets(request):
+#    pdb.set_trace()
     if request.content_type=='application/json' or request.content_type=='text/json':
       return listDatasetsAPI(request)
     else:
